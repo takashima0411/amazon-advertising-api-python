@@ -66,3 +66,5 @@ target/
 localtest.py
 
 .idea/
+.python-version
+*/__main__.py

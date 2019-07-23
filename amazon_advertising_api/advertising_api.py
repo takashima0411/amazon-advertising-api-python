@@ -1,5 +1,5 @@
-from amazon_advertising_api.regions import regions
-from amazon_advertising_api.versions import versions
+from regions import regions
+from versions import versions
 from io import BytesIO
 import urllib.request
 import urllib.parse
@@ -45,6 +45,9 @@ class AdvertisingApi:
         self.profile_id = None
         self.token_url = None
 
+        if self._access_token is None and self.refresh_token is None:
+            raise ValueError('access_token and refresh_token is empty. need at least one of them.')
+
         if region in regions:
             if sandbox:
                 self.endpoint = regions[region]['sandbox']
@@ -53,6 +56,8 @@ class AdvertisingApi:
             self.token_url = regions[region]['token_url']
         else:
             raise KeyError('Region {} not found in regions.'.format(regions))
+        if self._access_token is None and self.refresh_token is None:
+            raise ('Region {} not found in regions.'.format(regions))
 
     @property
     def access_token(self):
@@ -160,6 +165,78 @@ class AdvertisingApi:
         interface = 'profiles'
         return self._operation(interface, data, method='PUT')
 
+    def get_portfolios(self):
+        """
+        Retrieve a list of up to 100 portfolios using the specified filters.
+        :return:
+            :200: Portfolio
+            :401: Unauthorized
+            :404: Portfolio not found
+        """
+        interface = 'portfolios'
+
+        return self._operation(interface)
+
+    def get_portfolio(self, portfolio_id):
+        """
+        Retrieve a list of up to 100 portfolios using the specified filters.
+        :return:
+            :200: Portfolio
+            :401: Unauthorized
+            :404: Portfolio not found
+        """
+        interface = 'portfolios/{}'.format(portfolio_id)
+        return self._operation(interface)
+
+    def get_portfolios_ex(self):
+        """
+        Retrieve a list of up to 100 portfolios using the specified filters.
+        :return:
+            :200: Portfolio
+            :401: Unauthorized
+            :404: Portfolio not found
+        """
+        interface = 'portfolios/extended'
+        return self._operation(interface)
+
+    def get_portfolio_ex(self, portfolio_id):
+        """
+        Retrieve a list of up to 100 portfolios using the specified filters.
+        :return:
+            :200: Portfolio
+            :401: Unauthorized
+            :404: Portfolio not found
+        """
+        interface = 'portfolios/extended/{}'.format(portfolio_id)
+        return self._operation(interface)
+
+    def create_portfolio(self, data):
+        """
+        Create one or more portfolios. Maximum number of portfolios per account is 100.
+
+        :param data:
+
+        :return:
+            :200: Portfolio
+            :401: Unauthorized
+            :404: Portfolio not found
+        """
+        interface = 'portfolios'
+        return self._operation(interface, data, 'POST')
+
+    def update_portfolio(self, data):
+        """
+        Update one or more portfolios.
+        :param data:
+
+        :return:
+            :200: Portfolio
+            :401: Unauthorized
+            :404: Portfolio not found
+        """
+        interface = 'portfolios'
+        return self._operation(interface, data, 'PUT')
+
     def get_campaign(self, campaign_id, ads_type='sp'):
         """
         Retrieves a campaign by Id. Note that this call returns the minimal
@@ -178,6 +255,25 @@ class AdvertisingApi:
         """
         interface = '{}/campaigns/{}'.format(ads_type, campaign_id)
         return self._operation(interface)
+
+    def get_campaigns(self, params=None, ads_type='sp'):
+        """
+        Retrieves a campaign by Id. Note that this call returns the minimal
+        set of campaign fields, but is more efficient than **getCampaignEx**.
+
+        :GET: /campaigns/{campaignId}
+        :param campaign_id: The Id of the requested campaign.
+        :type campaign_id: string
+        :param ads_type: Type of advertisement.
+        :type ads_type: string
+
+        :returns:
+            :200: Campaign
+            :401: Unauthorized
+            :404: Campaign not found
+        """
+        interface = '{}/campaigns'.format(ads_type)
+        return self._operation(interface, params)
 
     def get_campaign_ex(self, campaign_id, ads_type='sp'):
         """
@@ -791,7 +887,7 @@ class AdvertisingApi:
                     'code': e.code,
                     'response': e.msg}
 
-    def _operation(self, interface, params=None, method='GET'):
+    def _operation(self, interface, params=None, method='GET', auto_refresh=True):
         """
         Makes that actual API call.
 
@@ -802,10 +898,12 @@ class AdvertisingApi:
         :param method: Call method. Should be either 'GET' or 'POST'
         :type method: string
         """
-        if self._access_token is None:
-            return {'success': False,
-                    'code': 0,
-                    'response': 'access_token is empty.'}
+        if self._access_token is None:  # get access_token from refresh_token.
+            result = self.do_refresh_token()
+            if result["success"] is False:
+                return {'success': False,
+                        'code': 0,
+                        'response': 'access_token is empty.'}
 
         headers = {'Authorization': 'bearer {}'.format(self._access_token),
                    'Content-Type': 'application/json',
@@ -846,9 +944,16 @@ class AdvertisingApi:
                     'code': f.code,
                     'response': json.loads(f.read().decode('utf-8'))}
         except urllib.error.HTTPError as e:
-            return {'success': False,
-                    'code': e.code,
-                    'response': e.msg}
+            detail = json.loads(e.read().decode('utf-8'))["details"]
+            if e.code == 401 and detail == "Authentication failed" and auto_refresh:
+                self.do_refresh_token()
+                return self._operation(interface, params, method, False)
+            else:
+                return {'success': False,
+                        'code': e.code,
+                        'response': e.msg,
+                        'detail': detail
+                        }
 
 
 class NoRedirectHandler(urllib.request.HTTPErrorProcessor):
