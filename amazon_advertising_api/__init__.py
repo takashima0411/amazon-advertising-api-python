@@ -1,1 +1,1 @@
-from advertising_api import AdvertisingApi
+from amazon_advertising_api import AdvertisingApi

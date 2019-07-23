@@ -1,5 +1,5 @@
-from regions import regions
-from versions import versions
+from amazon_advertising_api.regions import regions
+from amazon_advertising_api.versions import versions
 from io import BytesIO
 import urllib.request
 import urllib.parse
