@@ -714,9 +714,12 @@ class AdvertisingApi:
         interface = '{}/campaignNegativeKeywords/extended'.format(ads_type)
         return self._operation(interface, data)
 
-    def get_suggested_keywords(self, ad_group_id):
+    def get_suggested_keywords(self, ad_group_id, max_num_suggestions):
+        params = {
+            "maxNumSuggestions": max_num_suggestions
+        }
         interface = 'adGroups/{}/suggested/keywords'.format(ad_group_id)
-        return self._operation(interface)
+        return self._operation(interface, params)
 
     def get_suggested_keywords_ex(self, ad_group_id, data=None):
         """
