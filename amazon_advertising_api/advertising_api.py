@@ -729,15 +729,16 @@ class AdvertisingApi:
         interface = 'adGroups/{}/suggested/keywords/extended'.format(ad_group_id)
         return self._operation(interface, data)
 
-    def get_asin_suggested_keywords(self, asin):
+    def get_asin_suggested_keywords(self, asin, max_num_suggestions):
         """
-
-
         :param asin:
         :return:
         """
+        params = {
+            "maxNumSuggestions": max_num_suggestions
+        }
         interface = 'asins/{}/suggested/keywords'.format(asin)
-        return self._operation(interface)
+        return self._operation(interface, params)
 
     def get_asin_list_suggested_keywords(self, data=None):
         """
