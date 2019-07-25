@@ -810,7 +810,7 @@ class AdvertisingApi:
         Generate list of recommended products to target, based on the ASIN that is input. Successful response will be a list of recommended ASINs to target.
         """
         interface = 'sp/targets/productRecommendations'
-        return self._operation(interface, data)
+        return self._operation(interface, data, method='POST')
 
     def list_targeting_categories(self, data=None):
         """
