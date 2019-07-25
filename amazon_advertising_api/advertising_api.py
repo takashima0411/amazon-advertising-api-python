@@ -805,6 +805,20 @@ class AdvertisingApi:
         interface = '{}/productAds/extended'.format(ads_type)
         return self._operation(interface, data)
 
+    def list_target_recommendations(self, data=None):
+        """
+        Generate list of recommended products to target, based on the ASIN that is input. Successful response will be a list of recommended ASINs to target.
+        """
+        interface = 'sp/targets/productRecommendations'
+        return self._operation(interface, data)
+
+    def list_targeting_categories(self, data=None):
+        """
+        Get list of targeting categories.
+        """
+        interface = 'sp/targets/categories'
+        return self._operation(interface, data)
+
     def request_snapshot(self, record_type=None, snapshot_id=None, data=None):
         if record_type is not None:
             interface = '{}/snapshot'.format(record_type)
